@@ -3,22 +3,18 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-
-    "rootDir": ".",
+    "rootDir": "./src",
     "outDir": "./dist",
-
     "jsx": "react-jsx",
-
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
-
     "types": ["node", "express"],
     "typeRoots": ["./src/types", "./node_modules/@types"]
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "prisma/seed.ts"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts"],
   "exclude": ["dist", "node_modules"]
 }

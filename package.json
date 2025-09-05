@@ -8,10 +8,10 @@
     "start": "bun src/server.ts",
     "build": "tsc",
     "start:node": "node dist/server.js",
-    "prisma:generate": "bunx prisma generate",
-    "prisma:migrate": "bunx prisma migrate dev",
-    "prisma:studio": "bunx prisma studio",
-    "prisma:seed": "bunx prisma db seed"
+    "prisma:generate": "bun x prisma generate",
+    "prisma:migrate": "bun x prisma migrate dev",
+    "prisma:studio": "bun x prisma studio",
+    "prisma:seed": "bun x prisma db seed"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

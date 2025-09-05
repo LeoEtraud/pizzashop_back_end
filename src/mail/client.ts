@@ -1,13 +1,14 @@
 import nodemailer from "nodemailer";
+import SMTPTransport from "nodemailer/lib/smtp-transport";
 
-export const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: false, // IMPORTANTE: false na 587
+const smtpOptions: SMTPTransport.Options = {
+  host: process.env.SMTP_HOST!,
+  port: parseInt(process.env.SMTP_PORT ?? "587", 10),
+  secure: (process.env.SMTP_PORT ?? "") === "465", // true se usar 465
   auth: {
-    user: process.env.SMTP_USER, // seu gmail
-    pass: process.env.SMTP_PASS, // senha de app (16 caracteres)
+    user: process.env.SMTP_USER!,
+    pass: process.env.SMTP_PASS!,
   },
-  // Evita resolver IPv6 que pode falhar em algumas redes
-  family: 4,
-});
+};
+
+export const mailer = nodemailer.createTransport(smtpOptions);
