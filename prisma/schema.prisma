@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // use a URL do pooler para o Prisma Client em runtime
+}
+
+/**
+ * ====================== ENUMS ======================
+ */
+
+enum UserRole {
+  manager
+  customer
+
+  @@map("user_role")
+}
+
+enum OrderStatus {
+  pending
+  canceled
+  processing
+  delivering
+  delivered
+
+  @@map("order_status")
+}
+
+/**
+ * ====================== MODELS ======================
+ */
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  role      UserRole @default(customer)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relações
+  authLinks          AuthLink[]
+  restaurantsManaged Restaurant[] @relation("restaurantManager")
+  orders             Order[]      @relation("Order_customer")
+  evaluations        Evaluation[]
+
+  @@map("users")
+}
+
+model AuthLink {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  userId    String    @map("user_id")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+
+  // Relação
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt], name: "auth_links_user_created_idx")
+  @@map("auth_links")
+}
+
+model Restaurant {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  managerId   String?  @map("manager_id")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  manager     User?        @relation("restaurantManager", fields: [managerId], references: [id], onDelete: SetNull)
+  orders      Order[]      @relation("Order_restaurant")
+  products    Product[] // sem @relation aqui
+  evaluations Evaluation[]
+
+  @@index([managerId])
+  @@map("restaurants")
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  priceInCents Int      @map("price_in_cents")
+  restaurantId String   @map("restaurant_id")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade) // sem nome
+  orderItems OrderItem[]
+
+  @@index([restaurantId])
+  @@map("products")
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  customerId   String?     @map("customer_id")
+  restaurantId String?     @map("restaurant_id")
+  status       OrderStatus @default(pending)
+  totalInCents Int         @map("total_in_cents")
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relações
+  customer   User?       @relation("Order_customer", fields: [customerId], references: [id], onDelete: SetNull)
+  restaurant Restaurant? @relation("Order_restaurant", fields: [restaurantId], references: [id], onDelete: SetNull)
+  orderItems OrderItem[]
+
+  @@index([customerId])
+  @@index([restaurantId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id           String  @id @default(cuid())
+  orderId      String  @map("order_id")
+  productId    String? @map("product_id")
+  quantity     Int     @default(1) // Drizzle: default(1)
+  priceInCents Int     @map("price_in_cents")
+
+  // Relações
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model Evaluation {
+  id           String   @id @default(cuid())
+  customerId   String?  @map("customer_id")
+  restaurantId String?  @map("restaurant_id")
+  rate         Int
+  comment      String?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relações
+  customer   User?       @relation(fields: [customerId], references: [id])
+  restaurant Restaurant? @relation(fields: [restaurantId], references: [id])
+
+  @@index([customerId])
+  @@index([restaurantId])
+  @@map("evaluations")
+}
