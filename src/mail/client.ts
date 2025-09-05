@@ -1,14 +1,17 @@
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 
-const smtpOptions: SMTPTransport.Options = {
+export const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST!,
   port: parseInt(process.env.SMTP_PORT ?? "587", 10),
-  secure: (process.env.SMTP_PORT ?? "") === "465", // true se usar 465
+  secure:
+    (process.env.SMTP_PORT ?? "") === "465" ||
+    (process.env.SMTP_SECURE ?? "false") === "true",
   auth: {
     user: process.env.SMTP_USER!,
     pass: process.env.SMTP_PASS!,
   },
-};
+} satisfies SMTPTransport.Options);
 
-export const mailer = nodemailer.createTransport(smtpOptions);
+// (opcional) manter default para compatibilidade
+export default transporter;
