@@ -1,7 +1,6 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [],
   theme: { extend: {} },
-  // Em e-mail, o preflight do Tailwind costuma atrapalhar:
   corePlugins: { preflight: false },
 };
