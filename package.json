@@ -2,7 +2,7 @@
   "name": "pizzashop-back-end",
   "version": "1.0.0",
   "main": "index.js",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "dev": "bun --hot src/server.ts",
     "start": "bun src/server.ts",
@@ -46,7 +46,7 @@
     "@types/react-dom": "^19.1.9",
     "@types/tailwindcss": "^3.1.0",
     "prisma": "^6.15.0",
-    "tailwindcss": "^4.1.12",
+    "tailwindcss": "^4.1.13",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2"
   }

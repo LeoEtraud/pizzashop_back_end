@@ -12,7 +12,7 @@ import {
   Tailwind,
   Text,
 } from "@react-email/components";
-import tailwindConfig from "../../tailwind.email.config";
+import tailwindConfig from "../../tailwind.email.config.js";
 
 export interface AuthenticationMagicLinkTemplateProps {
   userEmail: string;
