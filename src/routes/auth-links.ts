@@ -10,7 +10,7 @@ authLinksRouter.get(
   async (req: Request, res: Response) => {
     const isProd = process.env.NODE_ENV === "production";
     const FRONTEND_URL = (
-      process.env.AUTH_REDIRECT_URL ?? "https://pizzashop-three.vercel.app"
+      process.env.AUTH_REDIRECT_URL ?? "https://pizzashop-three.vercel.app/app"
     ).replace(/\/$/, "");
 
     const code = String(req.query.code ?? "");
