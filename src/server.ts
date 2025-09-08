@@ -29,6 +29,10 @@ import { createEvaluationRouter } from "./routes/evaluations/create-evaluation";
 
 const app = express();
 
+// ✅ coloque aqui
+const isProd = process.env.NODE_ENV === "production";
+if (isProd) app.set("trust proxy", 1);
+
 function toOrigin(u: string) {
   try {
     return new URL(u).origin;

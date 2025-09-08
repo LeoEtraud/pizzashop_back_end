@@ -1,24 +1,20 @@
 import { Router, type Request, type Response } from "express";
 import jwt from "jsonwebtoken";
 import { bdPizzaShop } from "../database/prismaClient";
+import { UserRole } from "@prisma/client";
 
 export const authLinksRouter = Router();
 
-/**
- * GET /auth-links/authenticate?code=...&redirect=...
- * - valida o código
- * - marca como usado
- * - garante restaurante do manager
- * - cria cookie `auth` (JWT)
- * - redireciona para `redirect` (ou /app)
- */
 authLinksRouter.get(
   "/auth-links/authenticate",
   async (req: Request, res: Response) => {
+    const isProd = process.env.NODE_ENV === "production";
+    const FRONTEND_URL = (
+      process.env.AUTH_REDIRECT_URL ?? "https://pizzashop-three.vercel.app"
+    ).replace(/\/$/, "");
+
     const code = String(req.query.code ?? "");
-    const redirect =
-      String(req.query.redirect ?? "") ||
-      "https://pizzashop-three.vercel.app/app";
+    const rawRedirect = String(req.query.redirect ?? ""); // <- só lê 1 vez
 
     if (!code) return res.status(400).send("Código inválido.");
 
@@ -26,7 +22,6 @@ authLinksRouter.get(
       where: { code },
       include: { user: true },
     });
-
     if (!link || link.usedAt || link.expiresAt < new Date()) {
       return res.status(401).send("Link inválido ou expirado.");
     }
@@ -37,16 +32,16 @@ authLinksRouter.get(
       data: { usedAt: new Date() },
     });
 
-    // garante que o user é manager
+    // garante manager
     const user =
       link.user.role === "manager"
         ? link.user
         : await bdPizzaShop.user.update({
             where: { id: link.user.id },
-            data: { role: "manager" },
+            data: { role: UserRole.manager }, // tipado
           });
 
-    // garante que existe um restaurante para esse manager
+    // garante restaurante
     let restaurant = await bdPizzaShop.restaurant.findFirst({
       where: { managerId: user.id },
       select: { id: true },
@@ -58,7 +53,7 @@ authLinksRouter.get(
       });
     }
 
-    // emite JWT
+    // JWT + cookie
     const secret = (process.env.JWT_SECRET_KEY ??
       process.env.JWT_SECRET) as string;
     const token = jwt.sign(
@@ -69,12 +64,14 @@ authLinksRouter.get(
 
     res.cookie("auth", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
       path: "/",
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    return res.redirect(302, redirect);
+    // resolve redirecionamento (sem redeclarar)
+    const redirectUrl = rawRedirect || `${FRONTEND_URL}/app`;
+    return res.redirect(302, redirectUrl);
   }
 );
