@@ -40,7 +40,7 @@ function toOrigin(u: string) {
 const FRONT_URLS = (
   process.env.FRONT_ORIGINS ||
   process.env.AUTH_REDIRECT_URL ||
-  "http://localhost:5173"
+  "https://pizzashop-three.vercel.app/"
 )
   .split(",")
   .map((s) => s.trim())
