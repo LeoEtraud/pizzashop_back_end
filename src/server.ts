@@ -44,7 +44,7 @@ function toOrigin(u: string) {
 const FRONT_URLS = (
   process.env.FRONT_ORIGINS ||
   process.env.AUTH_REDIRECT_URL ||
-  "https://pizzashop-three.vercel.app/"
+  "https://pizzashop-three.vercel.app/home"
 )
   .split(",")
   .map((s) => s.trim())
