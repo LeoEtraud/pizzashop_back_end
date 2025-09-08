@@ -17,7 +17,8 @@ authLinksRouter.get(
   async (req: Request, res: Response) => {
     const code = String(req.query.code ?? "");
     const redirect =
-      String(req.query.redirect ?? "") || "http://localhost:5173/app";
+      String(req.query.redirect ?? "") ||
+      "https://pizzashop-three.vercel.app//app";
 
     if (!code) return res.status(400).send("Código inválido.");
 
