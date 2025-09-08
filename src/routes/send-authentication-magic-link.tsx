@@ -67,7 +67,7 @@ authRouter.post("/authenticate", async (req: Request, res: Response) => {
   await transporter.sendMail({
     from: `"Pizza Shop" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
     to: email,
-    subject: "[Pizza Shop] Seu link de acesso",
+    subject: "Seu link de acesso",
     html,
     text,
   });

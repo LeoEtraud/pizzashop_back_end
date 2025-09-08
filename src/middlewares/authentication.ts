@@ -2,21 +2,27 @@ import type { Request, Response, NextFunction } from "express";
 import * as jwt from "jsonwebtoken";
 import { bdPizzaShop } from "../database/prismaClient"; // 👈 importe o client
 
+const COOKIE_NAME = "auth";
+const SECRET = (process.env.JWT_SECRET_KEY ?? process.env.JWT_SECRET)!;
+
 export function authentication(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
-  const token = (req as any).cookies?.auth;
+  const cookieToken = (req as any).cookies?.[COOKIE_NAME];
+  const authz = req.get("authorization");
+  const bearerToken = authz?.startsWith("Bearer ") ? authz.slice(7) : undefined;
+
+  const token = cookieToken ?? bearerToken;
   if (!token)
     return res.status(401).json({ message: "Usuário não está autenticado!" });
 
   try {
-    const rawSecret = (process.env.JWT_SECRET_KEY ?? process.env.JWT_SECRET)!;
-    const payload = jwt.verify(token, rawSecret);
+    const payload = jwt.verify(token, SECRET);
     (req as any).user =
       typeof payload === "string" ? { sub: payload } : payload;
-    next();
+    return next();
   } catch {
     return res.status(401).json({ message: "Token inválido!" });
   }

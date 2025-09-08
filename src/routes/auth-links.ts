@@ -70,8 +70,11 @@ authLinksRouter.get(
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    // resolve redirecionamento (sem redeclarar)
     const redirectUrl = rawRedirect || `${FRONTEND_URL}/app`;
-    return res.redirect(302, redirectUrl);
+    // use fragment para o token não ir parar em logs de servidor/CDN:
+    return res.redirect(
+      302,
+      `${redirectUrl}#token=${encodeURIComponent(token)}`
+    );
   }
 );
