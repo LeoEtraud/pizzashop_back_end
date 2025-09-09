@@ -3,10 +3,6 @@ import { bdPizzaShop } from "../../database/prismaClient";
 
 export const registerRestaurantRouter = Router();
 
-/**
- * POST /restaurants
- * body: { restaurantName: string; managerName: string; phone: string; email: string }
- */
 registerRestaurantRouter.post("/restaurants", async (req, res, next) => {
   try {
     const restaurantName = String(req.body?.restaurantName ?? "").trim();
@@ -19,26 +15,55 @@ registerRestaurantRouter.post("/restaurants", async (req, res, next) => {
     if (!restaurantName || !managerName || !phone || !email) {
       return res.status(400).json({ message: "payload inválido" });
     }
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ message: "email inválido" });
     }
 
-    // cria ou promove manager
-    const manager = await bdPizzaShop.user.upsert({
+    // cria manager apenas se ainda não existir (NÃO atualiza dados de usuário existente)
+    let manager = await bdPizzaShop.user.findUnique({
       where: { email },
-      update: { name: managerName, phone, role: "manager" },
-      create: { name: managerName, email, phone, role: "manager" },
       select: { id: true },
     });
 
-    await bdPizzaShop.restaurant.create({
+    if (!manager) {
+      try {
+        manager = await bdPizzaShop.user.create({
+          data: { name: managerName, email, phone, role: "manager" },
+          select: { id: true },
+        });
+      } catch (errCreate: any) {
+        // condição de corrida: se outro processo criou o mesmo e-mail agora
+        if (errCreate?.code === "P2002") {
+          manager = await bdPizzaShop.user.findUnique({
+            where: { email },
+            select: { id: true },
+          });
+        } else {
+          throw errCreate;
+        }
+      }
+    }
+
+    // cria o restaurante e retorna os dados criados
+    const restaurant = await bdPizzaShop.restaurant.create({
       data: {
         name: restaurantName,
-        managerId: manager.id,
+        managerId: manager!.id,
+      },
+      select: {
+        id: true,
+        name: true,
+        managerId: true,
+        createdAt: true, // remova se seu schema não tiver esse campo
+        updatedAt: true, // remova se seu schema não tiver esse campo
       },
     });
 
-    return res.status(204).send();
+    // opcional: Location do recurso criado
+    res.setHeader("Location", `/restaurants/${restaurant.id}`);
+
+    return res.status(201).json(restaurant);
   } catch (err: any) {
     // conflito pode acontecer se houver alguma unique key custom
     if (err?.code === "P2002") {

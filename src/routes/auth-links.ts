@@ -14,7 +14,6 @@ authLinksRouter.get(
     ).replace(/\/$/, "");
 
     const code = String(req.query.code ?? "");
-    const rawRedirect = String(req.query.redirect ?? ""); // <- só lê 1 vez
 
     if (!code) return res.status(400).send("Código inválido.");
 
