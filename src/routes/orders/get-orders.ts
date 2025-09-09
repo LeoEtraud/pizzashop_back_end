@@ -58,7 +58,9 @@ getOrdersRouter.get("/orders", authentication, async (req, res, next) => {
 
     const totalCount = await bdPizzaShop.order.count({ where });
 
-    const all = await bdPizzaShop.order.findMany({
+    const start = pageIndex * perPage;
+
+    const rows = await bdPizzaShop.order.findMany({
       where,
       select: {
         id: true,
@@ -67,24 +69,12 @@ getOrdersRouter.get("/orders", authentication, async (req, res, next) => {
         totalInCents: true,
         customer: { select: { name: true } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "desc" }, // <-- apenas por data desc
+      skip: start,
+      take: perPage, // paginação no banco
     });
 
-    const weight: Record<OrderStatus, number> = {
-      pending: 1,
-      processing: 2,
-      delivering: 3,
-      delivered: 4,
-      canceled: 99,
-    };
-    all.sort((a, b) => {
-      const d = weight[a.status] - weight[b.status];
-      if (d !== 0) return d;
-      return b.createdAt.getTime() - a.createdAt.getTime();
-    });
-
-    const start = pageIndex * perPage;
-    const page = all.slice(start, start + perPage).map((o) => ({
+    const page = rows.map((o) => ({
       orderId: o.id,
       createdAt: o.createdAt,
       status: o.status,
