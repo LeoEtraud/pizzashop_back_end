@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { bdPizzaShop } from "../../database/prismaClient";
+import { seedNewRestaurant } from "../../services/seedNewRestaurant";
 
 export const registerRestaurantRouter = Router();
 
@@ -15,24 +16,22 @@ registerRestaurantRouter.post("/restaurants", async (req, res, next) => {
     if (!restaurantName || !managerName || !phone || !email) {
       return res.status(400).json({ message: "payload inválido" });
     }
-
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ message: "email inválido" });
     }
 
-    // se já existir usuário com este e-mail, não altera nada e bloqueia criação
+    // Verifica se já existe usuário com esse e-mail
     const alreadyExists = await bdPizzaShop.user.findUnique({
       where: { email },
       select: { id: true },
     });
-
     if (alreadyExists) {
       return res.status(409).json({
         message: "já existe um restaurante cadastrado com essa conta de e-mail",
       });
     }
 
-    // cria manager (se bater condição de corrida e alguém criar antes, tratamos P2002)
+    // Cria manager
     let managerId: string;
     try {
       const manager = await bdPizzaShop.user.create({
@@ -40,17 +39,17 @@ registerRestaurantRouter.post("/restaurants", async (req, res, next) => {
         select: { id: true },
       });
       managerId = manager.id;
-    } catch (errCreate: any) {
-      if (errCreate?.code === "P2002") {
+    } catch (e: any) {
+      if (e?.code === "P2002") {
         return res.status(409).json({
           message:
             "já existe um restaurante cadastrado com essa conta de e-mail",
         });
       }
-      throw errCreate;
+      throw e;
     }
 
-    // cria o restaurante e retorna os dados criados
+    // Cria restaurante
     const restaurant = await bdPizzaShop.restaurant.create({
       data: {
         name: restaurantName,
@@ -65,10 +64,20 @@ registerRestaurantRouter.post("/restaurants", async (req, res, next) => {
       },
     });
 
+    // Executa seed logo após criar restaurante
+    const seed = await seedNewRestaurant({
+      restaurantId: restaurant.id,
+      managerId,
+    });
+
     res.setHeader("Location", `/restaurants/${restaurant.id}`);
-    return res.status(201).json(restaurant);
+    return res.status(201).json({
+      ...restaurant,
+      message: seed.skipped
+        ? "Restaurante criado (já possuía dados demo)."
+        : "Restaurante criado com dados de demonstração.",
+    });
   } catch (err: any) {
-    // conflito pode acontecer se houver alguma unique key custom
     if (err?.code === "P2002") {
       return res.status(409).json({ message: "Conflito de dados" });
     }
