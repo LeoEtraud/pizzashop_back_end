@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "bun --hot src/server.ts",
     "start": "bun src/server.ts",
-    "build": "tsc && cp src/tailwind.email.config.js dist/",
+    "build": "tsc && cp src/tailwind.email.config.js dist/ && prisma generate",
     "start:node": "node dist/server.js",
+    "postinstall": "prisma generate",
+    "prisma:deploy": "prisma migrate deploy",
     "prisma:generate": "bun x prisma generate",
     "prisma:migrate": "bun x prisma migrate dev",
     "prisma:studio": "bun x prisma studio",
